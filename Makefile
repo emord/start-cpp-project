@@ -2,6 +2,7 @@ PROJ_DIR = $(shell pwd)
 
 CPPCHECKEXE=cppcheck
 CPPLINTEXE=cpplint
+SIMIANEXE=simian
 
 INCDIRS:=
 
@@ -44,3 +45,6 @@ debug: CXXFLAGS += -g
 debug: CXXFLAGS += -fsanitize=undefined
 debug: LDFLAGS += -fsanitize=undefined
 debug: $(EXE)
+
+simian:
+	$(SIMIANEXE) **/*.cpp **/*.hpp
