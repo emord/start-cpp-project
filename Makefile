@@ -19,26 +19,6 @@ CXXFLAGS+=$(INCDIRS)
 
 CPPLINT_FILTER:=--filter=-legal/copyright,-readability/streams
 
-all: $(EXE)
-
-obj/%.o: src/%.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
-
-$(EXE): $(OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
-gtest: LDLIBS += -lgtest -lgtest_main
-gtest: $(TESTS)
-
-test/obj/%.o: test/src/%.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
-
-test/bin/%.test: obj/%.o test/obj/%_unittest.o
-	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
-clean:
-	$(RM) obj/*.o test/obj/* test/bin/* $(EXE)
-
 ifeq ($(SANITIZE), thread)
 	CXXFLAGS += -fPIC -fPIE -fsanitize=thread
 	LDFLAGS += -fsanitize=thread -fPIE LDLIBS += -pie
@@ -49,16 +29,38 @@ ifeq ($(SANITIZE), address)
 endif
 endif
 
-cppcheck:
-	$(CPPCHECKEXE) $(INCDIRS) --enable=all --force src/
-
-cpplint:
-	$(CPPLINTEXE) $(CPPLINT_FILTER) $(SRCS)
+all: $(EXE)
 
 debug: CXXFLAGS += -g
 debug: CXXFLAGS += -fsanitize=undefined
 debug: LDFLAGS += -fsanitize=undefined
 debug: $(EXE)
+
+$(EXE): $(OBJS)
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+obj/%.o: src/%.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+gtest: LDLIBS += -lgtest -lgtest_main
+gtest: $(TESTS)
+
+test/bin/%.test: obj/%.o test/obj/%_unittest.o
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+test/obj/%.o: test/src/%.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+clean:
+	$(RM) obj/*.o test/obj/* test/bin/* $(EXE)
+
+cppcheck:
+	$(CPPCHECKEXE) $(INCDIRS) --enable=all --force src/
+	$(CPPCHECKEXE) $(INCDIRS) --enable=all --force test/src/
+
+cpplint:
+	$(CPPLINTEXE) $(CPPLINT_FILTER) $(SRCS)
+	$(CPPLINTEXE) $(CPPLINT_FILTER) $(TEST_SRCS)
 
 simian:
 	$(SIMIANEXE) **/*.cpp **/*.hpp
