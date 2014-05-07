@@ -1,5 +1,7 @@
-#include <iostream>
+#include <string>
 
-int main() {
-    std::cout << "Hello world" << std::endl;
+#include "hello_world.hpp"
+
+std::string ret_string() {
+    return "Hello world";
 }

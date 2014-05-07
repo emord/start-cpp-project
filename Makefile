@@ -1,19 +1,25 @@
-PROJ_DIR = $(shell pwd)
+PROJECT_DIR = $(shell pwd)
 
 CPPCHECKEXE=cppcheck
 CPPLINTEXE=cpplint
 SIMIANEXE=simian
 
-INCDIRS:=
+INCDIRS:=-I src/include
 
-SRCS:=$(shell find src/ -type f -name '*.cpp')
+SRCS:=$(shell find src/ -type f -name '*.cpp' ! -path 'src/test/*')
 OBJS:=$(addprefix obj/,$(notdir $(SRCS:.cpp=.o)))
 EXE=bin/hello_world
+
+TEST_SRCS:=$(shell find test/src/ -type f -name '*.cpp')
+TEST_OBJS:=$(addprefix test/obj/,$(notdir $(TEST_SRCS:.cpp=.o)))
+TESTS:=$(addprefix test/bin/,$(notdir $(TEST_SRCS:_unittest.cpp=.test)))
 
 CXXFLAGS:=-Wall -Wextra -pedantic -Werror -Weffc++ --std=c++11
 CXXFLAGS+=$(INCDIRS)
 
 CPPLINT_FILTER:=--filter=-legal/copyright,-readability/streams
+
+all: $(EXE)
 
 obj/%.o: src/%.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
@@ -21,13 +27,21 @@ obj/%.o: src/%.cpp
 $(EXE): $(OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+gtest: LDLIBS += -lgtest -lgtest_main
+gtest: $(TESTS)
+
+test/obj/%.o: test/src/%.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+test/bin/%.test: obj/%.o test/obj/%_unittest.o
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 clean:
-	$(RM) obj/* bin/*
+	$(RM) obj/*.o test/obj/* test/bin/* $(EXE)
 
 ifeq ($(SANITIZE), thread)
 	CXXFLAGS += -fPIC -fPIE -fsanitize=thread
-	LDFLAGS += -fsanitize=thread -fPIE
-	LDLIBS += -pie
+	LDFLAGS += -fsanitize=thread -fPIE LDLIBS += -pie
 else
 ifeq ($(SANITIZE), address)
 	CXXFLAGS += -fsanitize=address
