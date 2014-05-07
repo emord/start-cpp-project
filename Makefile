@@ -23,8 +23,24 @@ $(EXE): $(OBJS)
 clean:
 	$(RM) obj/* bin/*
 
+ifeq ($(SANITIZE), thread)
+	CXXFLAGS += -fPIC -fPIE -fsanitize=thread
+	LDFLAGS += -fsanitize=thread -fPIE
+	LDLIBS += -pie
+else
+ifeq ($(SANITIZE), address)
+	CXXFLAGS += -fsanitize=address
+	LDFLAGS += -fsanitize=address
+endif
+endif
+
 cppcheck:
 	$(CPPCHECKEXE) $(INCDIRS) --enable=all --force src/
 
 cpplint:
 	$(CPPLINTEXE) $(CPPLINT_FILTER) $(SRCS)
+
+debug: CXXFLAGS += -g
+debug: CXXFLAGS += -fsanitize=undefined
+debug: LDFLAGS += -fsanitize=undefined
+debug: $(EXE)
